@@ -1,0 +1,77 @@
+// mySerial.println(L80_SETUP_RESTORE_DEFAULT_SETTINGS);
+  // mySerial.print(L80_SETUP_NO_SENTENCE);
+  // mySerial.print(L80_SETUP_GGA_NMEA_SENTENCE);
+  // mySerial.println(L80_SETUP_NO_SENTENCE);
+  // mySerial.print(L80_SETUP_UPDATe_FREQ_1HZ);
+  // mySerial.println("$PMTK104*37\r\n"); // hard reset
+
+  // mySerial.print("$PMTK314,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n"); // only GGA
+  // mySerial.print("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n"); // only RMC
+
+  // mySerial.print("$PMTK220,10000*2F\r\n"); // 1hz sampling
+
+  // char s[] = {"$PMTK220,1000*1F\r\n"};
+  // int cpos = 1;
+  // uint8_t cs = 0;
+  // while (true)
+  // {
+  //   cs = cs ^ s[cpos];
+  //   cpos++;
+  //   if (s[cpos] == '*')
+  //   {
+  //     char css[3];
+  //     sprintf(css, "%02X", cs);
+  //     s[cpos + 1] = css[0];
+  //     s[cpos + 2] = css[1];
+  //     break;
+  //   }
+  // }
+
+  // // Serial.print(s);
+  // Serial1.print(s);
+
+  --------------------
+   // if (mySerial.available())
+  // {
+  //   ip = mySerial.read();
+  //    Serial.print(ip);
+  // }
+  // delay(50);
+  // mySerial.print()
+
+  ---------------------------
+  // void useGPS()
+// {
+//   while (mySerial.available()) // check for gps data
+//   {
+//     if (gps.encode(mySerial.read())) // encode gps data
+//     {
+//       Serial.print("SATS: ");
+//       Serial.println(gps.satellites.value());
+//       Serial.print("LAT: ");
+//       Serial.println(gps.location.lat(), 6);
+//       Serial.print("LONG: ");
+//       Serial.println(gps.location.lng(), 6);
+//       Serial.print("ALT: ");
+//       Serial.println(gps.altitude.meters());
+//       Serial.print("SPEED: ");
+//       Serial.println(gps.speed.mps());
+
+//       Serial.print("Date: ");
+//       Serial.print(gps.date.day());
+//       Serial.print("/");
+//       Serial.print(gps.date.month());
+//       Serial.print("/");
+//       Serial.println(gps.date.year());
+
+//       Serial.print("Hour: ");
+//       Serial.print(gps.time.hour());
+//       Serial.print(":");
+//       Serial.print(gps.time.minute());
+//       Serial.print(":");
+//       Serial.println(gps.time.second());
+//       Serial.println("---------------------------");
+//       delay(4000);
+//     }
+//   }
+// }

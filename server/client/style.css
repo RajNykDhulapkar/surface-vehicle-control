@@ -1,0 +1,125 @@
+/*
+  Rui Santos
+  Complete project details at https://RandomNerdTutorials.com/esp32-mpu-6050-web-server/
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files.
+  The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+*/
+
+html {
+    font-family: Arial;
+    display: inline-block;
+    text-align: center;
+}
+p {
+    font-size: 1.2rem;
+}
+body {
+    margin: 0;
+    padding: 0;
+    background: #032445;
+}
+.topnav {
+    overflow: hidden;
+    background-color: #003366;
+    color: #ffd43b;
+    font-size: 1rem;
+}
+.content {
+    padding: 20px;
+}
+.card {
+    background-color: white;
+    box-shadow: 2px 2px 12px 1px rgba(140, 140, 140, 0.5);
+}
+.card-title {
+    color: #003366;
+    font-weight: bold;
+}
+.cards {
+    max-width: 800px;
+    margin: 0 auto;
+    display: grid;
+    grid-gap: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+.reading {
+    font-size: 1.2rem;
+}
+.cube-content {
+    width: 100%;
+    background-color: white;
+    height: 300px;
+    margin: auto;
+    padding-top: 2%;
+}
+#reset {
+    border: none;
+    color: #fefcfb;
+    background-color: #003366;
+    padding: 10px;
+    text-align: center;
+    display: inline-block;
+    font-size: 14px;
+    width: 150px;
+    border-radius: 4px;
+}
+#resetX,
+#resetY,
+#resetZ {
+    border: none;
+    color: #fefcfb;
+    background-color: #003366;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    text-align: center;
+    display: inline-block;
+    font-size: 14px;
+    width: 20px;
+    border-radius: 4px;
+}
+
+.header {
+    font-size: 1.5rem;
+    position: relative;
+    background: #f7c4aa;
+    margin: 10px;
+    padding: 10px;
+    width: calc(100vw - 40px);
+    border-radius: 10px;
+}
+
+.data-sidebar {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 100px);
+}
+
+.telemetry,
+.gps {
+    width: 17rem;
+    background-color: #fefcfb;
+    border-radius: 10px;
+    margin: 0 10px 0 10px;
+    padding-bottom: 10px;
+}
+.telemetry {
+    flex-grow: none;
+}
+.gps {
+    margin-top: 10px;
+    flex-grow: 1;
+}
+
+.telemetry h2 {
+    padding-top: 10px;
+}
+.telemetry div,
+.gps div {
+    text-align: left;
+    padding-left: 20px;
+}
+.telemetry p,
+.gps p {
+    line-height: 0.6rem;
+}
