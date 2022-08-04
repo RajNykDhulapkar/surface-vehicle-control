@@ -6,8 +6,14 @@
 IMU imu(Wire, 0x68);
 int imu_status = 0;
 
+float latitude = 0;
+float longitude = 0;
+
+float heading = 0;
+
 unsigned long time_now = 0;
-int period = 1000;
+int control_period = 100;
+int guidance_period = 1000;
 
 void setup()
 {
@@ -32,56 +38,56 @@ void setup()
 void loop()
 {
 
-  // if (Serial1.available() > 0)
-  // {
-  //   // Serial.print("\n----------------------------------------------------\n");
-  //   gps::write_processed_module_data_to_prompt(Serial1, Serial);
-  //   // gps::write_raw_module_data_to_prompt(Serial1, Serial);
-  //   // Serial.print("\n----------------------------------------------------\n");
-  // }
-  // else
-  // {
+  if (Serial1.available() > 0)
+  {
+    // Serial.print("\n----------------------------------------------------\n");
+    gps::write_processed_module_data_to_prompt(Serial1, Serial);
+    // gps::write_raw_module_data_to_prompt(Serial1, Serial);
+    // Serial.print("\n----------------------------------------------------\n");
+  }
+  else
+  {
 
-  //   if (millis() >= time_now + period)
-  //   {
-  //     time_now += period;
-  //     // read the sensor
-  //     imu.readSensor();
-  //     // display the data
-  //     Serial.print("$imu;");
-  //     Serial.print(imu.getAccelX_mss(), 6);
-  //     Serial.print(";");
-  //     Serial.print(imu.getAccelY_mss(), 6);
-  //     Serial.print(";");
-  //     Serial.print(imu.getAccelZ_mss(), 6);
-  //     Serial.print(";");
-  //     Serial.print(imu.getGyroX_rads(), 6);
-  //     Serial.print(";");
-  //     Serial.print(imu.getGyroY_rads(), 6);
-  //     Serial.print(";");
-  //     Serial.print(imu.getGyroZ_rads(), 6);
-  //     Serial.print(";");
-  //     Serial.print(imu.getMagX_uT(), 6);
-  //     Serial.print(";");
-  //     Serial.print(imu.getMagY_uT(), 6);
-  //     Serial.print(";");
-  //     Serial.print(imu.getMagZ_uT(), 6);
-  //     Serial.print(";");
-  //     Serial.println(atan2(imu.getMagY_uT(), imu.getMagX_uT()) * 180 / PI, 6);
-  //     // delay(100);
-  //   }
-  // }
+    if (millis() >= time_now + control_period)
+    {
+      time_now += period;
+      // read the sensor
+      imu.readSensor();
+      // display the data
+      Serial.print("$imu;");
+      Serial.print(imu.getAccelX_mss(), 6);
+      Serial.print(";");
+      Serial.print(imu.getAccelY_mss(), 6);
+      Serial.print(";");
+      Serial.print(imu.getAccelZ_mss(), 6);
+      Serial.print(";");
+      Serial.print(imu.getGyroX_rads(), 6);
+      Serial.print(";");
+      Serial.print(imu.getGyroY_rads(), 6);
+      Serial.print(";");
+      Serial.print(imu.getGyroZ_rads(), 6);
+      Serial.print(";");
+      Serial.print(imu.getMagX_uT(), 6);
+      Serial.print(";");
+      Serial.print(imu.getMagY_uT(), 6);
+      Serial.print(";");
+      Serial.print(imu.getMagZ_uT(), 6);
+      Serial.print(";");
+      Serial.println(atan2(imu.getMagY_uT(), imu.getMagX_uT()) * 180 / PI, 6);
+      // delay(100);
+    }
+  }
 
   // for magnetometer calibration
-  imu.readSensor();
-  // display the data
-  Serial.print(imu.getMagX_uT(), 6);
-  Serial.print(",");
-  Serial.print(imu.getMagY_uT(), 6);
-  Serial.print(",");
-  Serial.print(imu.getMagZ_uT(), 6);
-  Serial.print(",");
-  Serial.println(atan2(imu.getMagY_uT(), imu.getMagX_uT()) * 180 / PI, 6);
+  // imu.readSensor();
+  // // display the data
+  // Serial.print(imu.getMagX_uT(), 6);
+  // Serial.print(",");
+  // Serial.print(imu.getMagY_uT(), 6);
+  // Serial.print(",");
+  // Serial.print(imu.getMagZ_uT(), 6);
+  // Serial.print(",");
+  // Serial.println(atan2(imu.getMagY_uT(), imu.getMagX_uT()) * 180 / PI, 6);
 
-  delay(100); // 10 Hz
+  // delay(100); // 10 Hz
 }

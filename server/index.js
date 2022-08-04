@@ -12,6 +12,11 @@ const port = new SerialPort({
 const parser = port.pipe(new ReadlineParser({ delimiter: "\n" }));
 
 // Read the port data
+// parser.on("data", (data) => {
+//     io.emit("message", data);
+
+//     console.log("got word from arduino:", data);
+// });
 
 app.get("/", (req, res) => {
     res.sendFile(__dirname + "/client/index.html");
@@ -30,7 +35,7 @@ io.on("connection", (socket) => {
     parser.on("data", (data) => {
         io.emit("message", data);
 
-        // console.log("got word from arduino:", data);
+        console.log("got word from arduino:", data);
     });
 
     socket.on("chat message", (msg) => {

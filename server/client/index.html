@@ -7,52 +7,75 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Surface Vehicle Control</title>
     <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css"
+        integrity="sha512-hoalWLoI8r4UszCkZ5kL8vayOGVae1oxXe/2A4AO6J9+580uKHDO3JdHb7NzwwzK5xr/Fs0W40kiNHxM9vyTtQ=="
+        crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js"
+        integrity="sha512-BB3hKbKWOc9Ez/TAwyWxNXeoV9c1v6FIeYiBieIWkpLjauysF18NzgR1MBNBXf8/KABdlkX68nAhlwcDFLGPCQ=="
+        crossorigin=""></script>
+
 </head>
 
 <body>
     <div class="header">Dashboard</div>
-    <div class="data-sidebar">
-        <div class="telemetry">
-            <h2 class=".head">Telemetry data</h2>
-            <div>
-                <p>accelerometer</p>
+    <div class="main">
+        <div class="data-sidebar">
+            <div class="telemetry">
+                <h2 class=".head">Telemetry data</h2>
                 <div>
-                    <p>x : <span id="accl_x"></span></p>
-                    <p>y : <span id="accl_y"></span></p>
-                    <p>z : <span id="accl_z"></span></p>
+                    <p>accelerometer</p>
+                    <div>
+                        <p>x : <span id="accl_x"></span></p>
+                        <p>y : <span id="accl_y"></span></p>
+                        <p>z : <span id="accl_z"></span></p>
+                    </div>
                 </div>
-            </div>
-            <div>
-                <p>gyroscope</p>
                 <div>
-                    <p>x : <span id="gyro_x"></span></p>
-                    <p>y : <span id="gyro_y"></span></p>
-                    <p>z : <span id="gyro_z"></span></p>
+                    <p>gyroscope</p>
+                    <div>
+                        <p>x : <span id="gyro_x"></span></p>
+                        <p>y : <span id="gyro_y"></span></p>
+                        <p>z : <span id="gyro_z"></span></p>
+                    </div>
                 </div>
-            </div>
-            <div>
-                <p>magnetometer</p>
                 <div>
-                    <p>x : <span id="magneto_x"></span></p>
-                    <p>y : <span id="magneto_y"></span></p>
-                    <p>z : <span id="magneto_z"></span></p>
+                    <p>magnetometer</p>
+                    <div>
+                        <p>x : <span id="magneto_x"></span></p>
+                        <p>y : <span id="magneto_y"></span></p>
+                        <p>z : <span id="magneto_z"></span></p>
+                    </div>
                 </div>
-            </div>
-            <div>
+                <div>
 
-                <p>heading : <span id="heading"></span></p>
+                    <p>heading : <span id="heading"></span>°</p>
+
+                </div>
+            </div>
+            <div class="gps">
+                <h2 class=".head">GPS data</h2>
+                <div>
+                    <p>latitude : <span id="latitude"></span></p>
+                    <p>longitude : <span id="longitude"></span></p>
+                    <p>speed : <span id="speed"></span></p>
+                    <p>true course : <span id="true_course"></span></p>
+                </div>
 
             </div>
         </div>
-        <div class="gps">
-            <h2 class=".head">GPS data</h2>
-            <div>
-                <p>latitude : <span id="latitude"></span></p>
-                <p>longitude : <span id="longitude"></span></p>
-                <p>speed : <span id="speed"></span></p>
-                <p>true course : <span id="true_course"></span></p>
+        <div class="widgets">
+            <div class="map-box">
+                <h2>Map</h2>
+                <div class="map-canvas" id="mapCanvas">
+                </div>
             </div>
 
+            <div class="compass-box">
+                <h2>Compass</h2>
+                <div class="compass-canvas" id="compassCanvas"></div>
+            </div>
         </div>
     </div>
     <script src="/static/script.js"></script>

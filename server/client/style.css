@@ -88,11 +88,65 @@ body {
     width: calc(100vw - 40px);
     border-radius: 10px;
 }
+.main {
+    display: flex;
+}
 
 .data-sidebar {
+    flex-grow: none;
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 100px);
+    height: calc(100vh - 80px);
+}
+
+.widgets {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.widgets .map-canvas {
+    background-color: #fefcfb;
+    margin-right: 10px;
+    border-radius: 10px;
+    height: 25rem;
+}
+.widgets .compass-box {
+    flex-grow: none;
+    background-color: #fefcfb;
+    margin: 10px 10px 0 0;
+    border-radius: 10px;
+    /* flex-grow: 1; */
+    width: 15rem;
+}
+.widgets .map-box {
+    flex-grow: 1;
+    background-color: #fefcfb;
+    border-radius: 10px;
+    margin-right: 10px;
+}
+
+.widgets .map-box h2 {
+    padding: 0;
+    margin: 5px 0 0;
+}
+
+.widgets #mapCanvas {
+    height: calc(100% - 3rem);
+    width: calc(100% - 20px);
+    margin: 0 10px 0 10px;
+}
+
+.widgets .compass-box h2 {
+    /* padding-top: 5px; */
+    margin: 5px 0 0 0;
+}
+.widgets .compass-box .compass-canvas {
+    /* padding-top: 5px; */
+    /* background-color: #f7c4aa; */
+    width: 100%;
+    height: calc(100% - 3rem);
+    margin-top: 5px;
 }
 
 .telemetry,

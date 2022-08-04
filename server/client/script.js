@@ -1,18 +1,37 @@
-/*
-  Rui Santos
-  Complete project details at https://RandomNerdTutorials.com/esp32-mpu-6050-web-server/
+let a = [
+    [0.89534, -0.017772, -0.01735],
+    [-0.017772, 0.883792, -0.022609],
+    [-0.01735, -0.022609, 0.971979],
+];
 
-  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files.
-  The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
+let b = [19.03355, 27.47569, 66.334158];
+let heading = 0;
 
 var socket = io("http://localhost:3000/");
 
-socket.on("message", function (msg) {
-    console.log(msg.split(" "));
+var map = L.map("mapCanvas").setView([15.455956, 73.802159], 15);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap",
+}).addTo(map);
+
+var theMarker = {};
+
+map.on("click", function (e) {
+    lat = e.latlng.lat;
+    lon = e.latlng.lng;
+
+    console.log("You clicked the map at LAT: " + lat + " and LONG: " + lon);
+    //Clear existing marker,
+
+    if (theMarker != undefined) {
+        map.removeLayer(theMarker);
+    }
+
+    //Add a marker to show where you clicked.
+    theMarker = L.marker([lat, lon]).addTo(map);
 });
 
-let scene, camera, rendered, cube;
+var marker = L.marker([15.455956, 73.802159]).addTo(map);
 
 function parentWidth(elem) {
     return elem.parentElement.clientWidth;
@@ -22,99 +41,83 @@ function parentHeight(elem) {
     return elem.parentElement.clientHeight;
 }
 
-function init3D() {
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xffffff);
+socket.on("message", function (msg) {
+    let cords = msg.split(";");
+    if (cords[0] === "$imu") {
+        document.getElementById("accl_x").innerHTML = cords[1];
+        document.getElementById("accl_y").innerHTML = cords[2];
+        document.getElementById("accl_z").innerHTML = cords[3];
 
-    camera = new THREE.PerspectiveCamera(
-        70,
-        parentWidth(document.getElementById("3Dcube")) /
-            parentHeight(document.getElementById("3Dcube")),
-        1,
-        1000
-    );
+        document.getElementById("gyro_x").innerHTML = cords[4];
+        document.getElementById("gyro_y").innerHTML = cords[5];
+        document.getElementById("gyro_z").innerHTML = cords[6];
 
-    renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(
-        parentWidth(document.getElementById("3Dcube")),
-        parentHeight(document.getElementById("3Dcube"))
-    );
+        const res = multiply(a, [
+            [Number(cords[7]) - b[0]],
+            [Number(cords[8]) - b[1]],
+            [Number(cords[9]) - b[2]],
+        ]);
 
-    document.getElementById("3Dcube").appendChild(renderer.domElement);
+        document.getElementById("magneto_x").innerHTML = Math.round(res[0] * 10000) / 10000;
+        document.getElementById("magneto_y").innerHTML = Math.round(res[1] * 10000) / 10000;
+        document.getElementById("magneto_z").innerHTML = Math.round(res[2] * 10000) / 10000;
 
-    // Create a geometry
-    const geometry = new THREE.BoxBufferGeometry(5, 1, 4);
+        if (res[0] >= 0) {
+            heading = Math.round(((Math.atan(res[1] / res[0]) * 180) / Math.PI) * 10000) / 10000;
+        } else {
+            if (res[1] >= 0) {
+                heading =
+                    Math.round((180 + (Math.atan(res[1] / res[0]) * 180) / Math.PI) * 10000) /
+                    10000;
+            } else {
+                heading =
+                    Math.round((-180 + (Math.atan(res[1] / res[0]) * 180) / Math.PI) * 10000) /
+                    10000;
+            }
+        }
 
-    // Materials of each face
-    var cubeMaterials = [
-        new THREE.MeshBasicMaterial({ color: 0x03045e }),
-        new THREE.MeshBasicMaterial({ color: 0x023e8a }),
-        new THREE.MeshBasicMaterial({ color: 0x0077b6 }),
-        new THREE.MeshBasicMaterial({ color: 0x03045e }),
-        new THREE.MeshBasicMaterial({ color: 0x023e8a }),
-        new THREE.MeshBasicMaterial({ color: 0x0077b6 }),
-    ];
+        document.getElementById("heading").innerHTML = heading;
+    } else if (cords[0] === "$gps") {
+        document.getElementById("latitude").innerHTML = cords[3];
+        document.getElementById("longitude").innerHTML = cords[4];
+        document.getElementById("speed").innerHTML = cords[5];
+        document.getElementById("true_course").innerHTML = cords[6];
+    }
+});
 
-    const material = new THREE.MeshFaceMaterial(cubeMaterials);
+const compassCanvas = document.getElementById("compassCanvas");
 
-    cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
-    camera.position.z = 5;
-    renderer.render(scene, camera);
+function setup() {
+    const canvas = createCanvas(200, 200);
+    canvas.parent("compassCanvas");
+    // compass = new Compass();
+    // compass.init(compassReady);
+    angleMode(DEGREES);
 }
 
-// Resize the 3D object when the browser window changes size
-function onWindowResize() {
-    camera.aspect =
-        parentWidth(document.getElementById("3Dcube")) /
-        parentHeight(document.getElementById("3Dcube"));
-    //camera.aspect = window.innerWidth /  window.innerHeight;
-    camera.updateProjectionMatrix();
-    //renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setSize(
-        parentWidth(document.getElementById("3Dcube")),
-        parentHeight(document.getElementById("3Dcube"))
-    );
+function draw() {
+    background(254, 252, 251);
+    translate(100, 100);
+    rotate(heading);
+    fill(0);
+    rect(-10, -50, 20, 100);
 }
 
-window.addEventListener("resize", onWindowResize, false);
-
-// Create the 3D representation
-init3D();
-
-// Create events for the sensor readings
-if (!!window.EventSource) {
-    socket.on("message", function (msg) {
-        let cords = msg.split(" ");
-        document.getElementById("accX").innerHTML = cords[0];
-        document.getElementById("accY").innerHTML = cords[1];
-        document.getElementById("accZ").innerHTML = cords[2];
-
-        document.getElementById("gyroX").innerHTML = cords[3];
-        document.getElementById("gyroY").innerHTML = cords[4];
-        document.getElementById("gyroZ").innerHTML = cords[5];
-
-        document.getElementById("temp").innerHTML = cords[9];
-
-        let magAccl = Math.sqrt(
-            Math.pow(Number(cords[0]), 2) +
-                Math.pow(Number(cords[1]), 2) +
-                Math.pow(Number(cords[2]), 2)
-        );
-        let Xrotation = Math.acos(Number(cords[0]) / magAccl);
-        let Yrotation = Math.acos(Number(cords[1]) / magAccl);
-        let Zrotation = Math.acos(Number(cords[2]) / magAccl);
-
-        // Change cube rotation after receiving the readinds
-        cube.rotation.x = 10;
-        cube.rotation.z = 10;
-        renderer.render(scene, camera);
-    });
-}
-
-function resetPosition(element) {
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", "/" + element.id, true);
-    console.log(element.id);
-    xhr.send();
+// m1 -
+function multiply(a, b) {
+    var aNumRows = a.length,
+        aNumCols = a[0].length,
+        bNumRows = b.length,
+        bNumCols = b[0].length,
+        m = new Array(aNumRows); // initialize array of rows
+    for (var r = 0; r < aNumRows; ++r) {
+        m[r] = new Array(bNumCols); // initialize the current row
+        for (var c = 0; c < bNumCols; ++c) {
+            m[r][c] = 0; // initialize the current cell
+            for (var i = 0; i < aNumCols; ++i) {
+                m[r][c] += a[r][i] * b[i][c];
+            }
+        }
+    }
+    return m;
 }
