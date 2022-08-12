@@ -5,51 +5,62 @@
 #include <LatLonToUTM.h>
 #include <Server.h>
 #include <crc.h>
+#include "MPU9250.h"
 
 volatile byte count;
 byte reload = 0x9C;
 
-IMU imu(Wire, 0x68);
+MPU9250 imu(Wire, 0x68);
 int imu_status = 0;
 
-double lat = 0; // 15.455710, 73.802659
-double lon = 0;
+/*
+ * mode
+ * 0 - auto
+ * 1 - guided
+ * 2 - manual
+ */
+int mode = 0;
+
+double lat = 15.455954; // 15.456031
+double lon = 73.802089; // 73.802099
 double utm_easting = 0;
 double utm_northing = 0;
 
-double target_lat = 0; // 15.495666, 73.947474
-double target_lon = 0;
+double target_lat = 15.457496; // 15.457080
+double target_lon = 73.803382; // 73.802948
 double utm_target_easting = 0;
 double utm_target_northing = 0;
 
-double dist;
-double psi_d;
+volatile double dist;
+volatile double psi_d;
 
 // control parameters
-double k_p = 100 * PI / 180, k_d = 0.00;
+double k_p = 180 * PI / 180, k_d = 0.00;
 double comm_m = 500 * 2;
-double diff_m = 0;
+volatile double diff_m = 0;
 
-double t_1 = (comm_m + diff_m) / 2, t_2 = (comm_m - diff_m) / 2;
-double calculateDiff(double psi_d, double psi, double yaw_rate);
-double calculatePsi_d();
-double calculate_d();
+int t_1 = (comm_m + diff_m) / 2, t_2 = (comm_m - diff_m) / 2;
+void calculateDiff();
+void calculatePsi_d();
+void calculate_d();
+void calculate_psi();
+void sendLatLonToRecv(double lat, double lon);
+void sendPOSToRecv();
+void sendCtrlToRecv();
+void sendStatus();
 
-double psi = 0;
+volatile double psi = 0;
+volatile double yaw_rate = 0;
 
-unsigned long control_time_now = 0;
-unsigned long guidance_time_now = 0;
-unsigned long recv_time_now = 0;
-int control_period = 100;
-int guidance_period = 1500;
-int recv_period = 100;
 unsigned long currentTime;
 unsigned long controlPreviousTime = 0;
 unsigned long guidancePreviousTime = 0;
 unsigned long recvPreviousTime = 0;
-int controlInterval1 = 1000;
-int guidanceInterval2 = 200;
-int recvInterval3 = 400;
+unsigned long sendPreviousTime = 0;
+int controlInterval = 500;
+int guidanceInterval = 900;
+int recvInterval = 400;
+int sendInterval = 1500;
 
 boolean toggle4 = LOW;
 
@@ -58,43 +69,54 @@ void setup()
   Serial.begin(9600);
   Serial1.begin(9600);
   Serial3.begin(9600);
+  Wire.begin();
 
-  // imu_status = imu.begin();
-  // if (imu_status < 0)
-  // {
-  //   Serial.println("IMU initialization unsuccessful");
-  //   Serial.println("Check IMU wiring or try cycling power");
-  //   Serial.print("Status: ");
-  //   Serial.println(imu_status);
-  //   while (1)
-  //     ;
-  // }
+  imu_status = imu.begin();
+  if (imu_status < 0)
+  {
+    Serial.println("IMU initialization unsuccessful");
+    Serial.println("Check IMU wiring or try cycling power");
+    Serial.print("Status: ");
+    Serial.println(imu_status);
+    while (1)
+      ;
+  }
   // gps::send_command_to_module(GPS_SETUP_RESTORE_DEFAULT_SETTINGS, Serial1);
 
-  target_lat = 15.495666;
-  target_lon = 73.947474;
   LLtoUTM(target_lat, target_lon, &utm_target_easting, &utm_target_northing);
 
-  // gps::send_command_to_module(GPS_SETUP_UPDATE_SAMPLING_1000ms, Serial1);
-  // gps::send_command_to_module(GPS_SETUP_RMC_NMEA_SENTENCE, Serial1);
+  gps::send_command_to_module(GPS_SETUP_UPDATE_SAMPLING_1500ms, Serial1);
+  gps::send_command_to_module(GPS_SETUP_RMC_NMEA_SENTENCE, Serial1);
   // delay(100);
   delay(3000);
+  Serial.println("Start");
 }
 
 void loop()
 {
   // gps::write_raw_module_data_to_prompt(Serial1, Serial);
-  bool is_valid_cord = gps::getLatLon(&lat, &lon, Serial1);
+  // gps::getLatLon(&lat, &lon, Serial1);
+  bool is_valid_cord = true;
   if (is_valid_cord)
   {
-    char buffer[50];
-    char lat_temp[10];
-    char lon_temp[10];
-    dtostrf(lat, 4, 6, lat_temp);
-    dtostrf(lon, 4, 6, lon_temp);
-    sprintf(buffer, "$gps,%s,%s", lat_temp, lon_temp);
-    Serial.println(signMessage(String(buffer))); // DEBUG
-    Serial3.println(signMessage(String(buffer)));
+    // char buffer[50];
+    // char temp_lat[10];
+    // char temp_lon[10];
+    lat = 15.456031;
+    lon = 73.802099;
+    // sendLatLonToRecv(lat, lon);
+    // dtostrf(lon, 4, 5, temp_lon);
+    // dtostrf(lat, 4, 5, temp_lat);
+
+    // String sendString = "$gps,";
+    // sendString += String(lat, 6);
+    // sendString += ",";
+    // sendString += String(lon, 6);
+    // String sendString = "$gps,0.00,0.00";
+    // sprintf(buffer, "$gps,%s,%s", String(lat, 6).c_str(), String(lon, 6).c_str());
+    // Serial.println(sendString); // DEBUG
+    // Serial3.println(sendString);
+    // delay(1000);
     // LLtoUTM(lat, lon, &utm_easting, &utm_northing);
     // LLtoUTM(target_lat, target_lon, &utm_target_easting, &utm_target_northing);
   }
@@ -147,66 +169,130 @@ void loop()
   // Serial.println(d, 2);
   // delay(1000);
 
-  if (millis() >= guidance_time_now + guidance_period)
+  if (currentTime - controlPreviousTime >= controlInterval)
   {
-    guidance_time_now += control_period;
+    imu.readSensor();
+    calculate_psi();
+    calculateDiff();
+    t_1 = (comm_m - diff_m) / 2;
+    t_2 = (comm_m + diff_m) / 2;
+    // sendCtrlToRecv();
+    controlPreviousTime = currentTime;
+  }
+
+  if ((int)(currentTime - guidancePreviousTime) >= guidanceInterval)
+  {
     LLtoUTM(lat, lon, &utm_easting, &utm_northing);
     calculatePsi_d();
-    char buffer[50];
-    char psi_d_temp[10];
-    char d_temp[10];
-    dtostrf(psi_d, 4, 6, psi_d_temp);
-    dtostrf(calculate_d(), 4, 6, d_temp);
-    sprintf(buffer, "$pos,%s,%s", psi_d_temp, d_temp);
-    Serial.println(signMessage(String(buffer))); // DEBUG
-    Serial3.println(signMessage(String(buffer)));
+    calculate_d();
+    // sendPOSToRecv();
+    guidancePreviousTime = currentTime;
   }
 
-  // TODO remove this block
-  // log received data on Serial0
-  // this block of code will be present on the receiver module
-  if (millis() >= recv_time_now + recv_period)
+  if (currentTime - sendPreviousTime >= sendInterval)
   {
-    recv_time_now += recv_period;
-    LLtoUTM(lat, lon, &utm_easting, &utm_northing);
+    // sendLatLonToRecv();
+    sendStatus();
+    sendPreviousTime = currentTime;
   }
-
-  if (millis() >= control_time_now + control_period)
-  {
-    control_time_now += control_period;
-  }
-
-  // if (gps::getLatLon(&lat, &lon, Serial1) && false)
-  // {
-  //   String sendString;
-  //   sendString.concat("$gps,");
-  //   sendString.concat(String(lat, 10));
-  //   sendString.concat(",");
-  //   sendString.concat(String(lon, 10));
-  //   Serial.println(sendString);
-  //   Serial3.println(sendString);
-  //   LLtoUTM(lat, lon, &utm_easting, &utm_northing);
-  //   LLtoUTM(target_lat, target_lon, &utm_target_easting, &utm_target_northing);
-  // }
 }
 
-double calculateDiff(double psi_d, double psi, double yaw_rate)
+void calculateDiff()
 {
-  return (k_p * (psi_d - psi) - k_d * yaw_rate);
+  diff_m = (k_p * (psi_d - psi) - k_d * yaw_rate);
   // return (psi_d - psi);
 }
 
-double calculate_d()
+void calculate_d()
 {
-  return sqrtf(sq(utm_target_easting - utm_easting) + sq(utm_target_northing - utm_northing));
+  dist = sqrtf(sq(utm_target_easting - utm_easting) + sq(utm_target_northing - utm_northing));
 }
 
-double calculatePsi_d()
+void calculatePsi_d()
 {
   double d_y = (utm_target_northing - utm_northing);
   double d_x = (utm_target_easting - utm_easting);
   if ((d_x > 0 && d_y > 0) || (d_x < 0 && d_y > 0))
-    return atan2(d_y, d_x) * 180 / PI;
+    psi_d = atan2(d_y, d_x) * 180 / PI;
   else
-    return (atan2(d_y, d_x) * 180 / PI + 360);
+    psi_d = (atan2(d_y, d_x) * 180 / PI + 360);
+}
+
+void sendLatLonToRecv(double lat, double lon)
+{
+  String sendString = "$gps,";
+  sendString.concat(String(lat, 6));
+  sendString.concat(",");
+  sendString.concat(String(lon, 6));
+  Serial.print(signMessage(sendString)); // DEBUG
+  Serial3.print(signMessage(sendString));
+}
+
+void sendPOSToRecv()
+{
+  String sendString = "$pos,";
+  sendString.concat(String(psi_d, 6));
+  sendString.concat(",");
+  sendString.concat(String(dist, 6));
+  Serial.print(signMessage(sendString)); // DEBUG
+  Serial3.print(signMessage(sendString));
+}
+
+void sendCtrlToRecv()
+{
+  String sendString = "$ctrl,";
+  sendString.concat(String(psi, 6));
+  sendString.concat(",");
+  sendString.concat(t_1);
+  sendString.concat(",");
+  sendString.concat(t_2);
+  Serial.print(signMessage(sendString)); // DEBUG
+  Serial3.print(signMessage(sendString));
+}
+
+void sendStatus()
+{
+  String sendString = "$status,";
+  sendString.concat(String(lat, 6));
+  sendString.concat(",");
+  sendString.concat(String(lon, 6));
+  sendString.concat(",");
+  sendString.concat(String(psi_d, 6));
+  sendString.concat(",");
+  sendString.concat(String(dist, 6));
+  sendString.concat(",");
+  sendString.concat(String(psi, 6));
+  sendString.concat(",");
+  sendString.concat(t_1);
+  sendString.concat(",");
+  sendString.concat(t_2);
+  Serial.print(signMessage(sendString)); // DEBUG
+  Serial3.print(signMessage(sendString));
+}
+
+void calculate_psi()
+{
+  imu.readSensor();
+  float magX = imu.getMagX_uT() - 19.03355;
+  float magY = imu.getMagY_uT() - 27.47569;
+  float magZ = imu.getMagZ_uT() - 66.334158;
+  yaw_rate = imu.getGyroBiasZ_rads();
+
+  magX = 0.89534 * magX - 0.017772 * magY - 0.01735 * magZ;
+  magY = -0.017772 * magX + 0.883792 * magY - 0.022609;
+
+  float temp = magX;
+  magX = magY;
+  magY = temp;
+
+  psi = atan2(magY, magX) * 180 / PI;
+  return;
+
+  if ((magX > 0 && magY > 0) || (magX < 0 && magY > 0))
+    if ((360 - (atan2(magY, magX) * 180 / PI)) > 270)
+      psi = (360 - (atan2(magY, magX) * 180 / PI)) - 270;
+    else
+      psi = (360 - (atan2(magY, magX) * 180 / PI)) + 90;
+  else
+    psi = (360 - (atan2(magY, magX) * 180 / PI + 360)) + 90;
 }

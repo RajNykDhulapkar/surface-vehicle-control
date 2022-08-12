@@ -87,7 +87,7 @@ public:
     float getMagY_uT();
     float getMagZ_uT();
     float getTemperature_C();
-    bool getHeading(double *psi);
+    bool getHeading();
 
 protected:
     // i2c

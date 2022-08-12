@@ -1,4 +1,4 @@
-st = "PMTK220,5000"
+st = "PMTK220,1500"
 i = 0
 checksum = 0
 while i < len(st):

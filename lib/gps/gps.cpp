@@ -54,20 +54,16 @@ char *gps::decimalToHexadecimal(long int decimalNumber)
     }
 }
 
-void gps::send_command_to_module(const char *command, HardwareSerial &refSerial)
+void gps::send_command_to_module(String command, HardwareSerial &refSerial)
 {
-    const char *ptrCommand = command;
+    Serial.println("sending command");
     while (!(refSerial.available() > 0))
     {
-        if (*ptrCommand != '\0')
-        {
-            refSerial.write(*(ptrCommand++));
-        }
-        else
-        {
-            break;
-        }
+        refSerial.print(command.c_str());
     }
+    Serial.print("sent command ");
+    Serial.println(command);
+    delay(100);
 }
 
 void gps::write_raw_module_data_to_prompt(HardwareSerial &refSerial, HardwareSerial &promptSerial)

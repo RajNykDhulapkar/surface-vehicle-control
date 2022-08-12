@@ -35,7 +35,7 @@ io.on("connection", (socket) => {
     parser.on("data", (data) => {
         io.emit("message", data);
 
-        console.log("got word from arduino:", data);
+        console.log("recv: ", data);
     });
 
     socket.on("chat message", (msg) => {

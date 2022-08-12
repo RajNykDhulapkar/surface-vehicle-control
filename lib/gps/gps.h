@@ -10,7 +10,8 @@ module: L80 M39 Quectel
 
 #define GPS_SETUP_TURN_OFF_ANT_DATA_NUISANCE "$PGCMD,33,0*6D\r\n\0"                               // turn off antenna data nuisance
 #define GPS_SETUP_UPDATE_SAMPLING_1000ms "$PMTK220,1000*1F\r\n\0"                                 // set update frequency to 1Hz
-#define GPS_SETUP_UPDATE_SAMPLING_5000ms "$PMTK220,5000*1B\r\n\0"                                 // set update frequency to 1Hz
+#define GPS_SETUP_UPDATE_SAMPLING_1500ms "$PMTK220,1500*1A\r\n\0"                                 // set update frequency to 0.67Hz
+#define GPS_SETUP_UPDATE_SAMPLING_5000ms "$PMTK220,5000*1B\r\n\0"                                 // set update frequency to 0.2Hz
 #define GPS_SETUP_RMC_NMEA_SENTENCE "$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n\0"     // RMC NMEA Sentence
 #define GPS_SETUP_GGA_NMEA_SENTENCE "$PMTK314,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n\0"     // GGA NMEA Sentence
 #define GPS_SETUP_GGA_RMC_NMEA_SENTENCE "$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28\r\n\0" // GGA and RMC NMEA Sentence
@@ -26,7 +27,7 @@ namespace gps
 
     char *decimalToHexadecimal(long int decimalNumber);
 
-    void send_command_to_module(const char *, HardwareSerial &refSerial);
+    void send_command_to_module(String command, HardwareSerial &refSerial);
 
     void write_raw_module_data_to_prompt(HardwareSerial &refSerial, HardwareSerial &promptSerial);
 
