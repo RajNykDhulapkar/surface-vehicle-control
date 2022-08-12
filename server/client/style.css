@@ -5,11 +5,17 @@
   Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files.
   The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 */
+* {
+    margin: 0;
+    padding: 0;
+    /* box-sizing: border-box; */
+}
 
 html {
     font-family: Arial;
     display: inline-block;
     text-align: center;
+    box-sizing: border-box;
 }
 p {
     font-size: 1.2rem;
@@ -18,65 +24,9 @@ body {
     margin: 0;
     padding: 0;
     background: #032445;
-}
-.topnav {
-    overflow: hidden;
-    background-color: #003366;
-    color: #ffd43b;
-    font-size: 1rem;
-}
-.content {
-    padding: 20px;
-}
-.card {
-    background-color: white;
-    box-shadow: 2px 2px 12px 1px rgba(140, 140, 140, 0.5);
-}
-.card-title {
-    color: #003366;
-    font-weight: bold;
-}
-.cards {
-    max-width: 800px;
-    margin: 0 auto;
-    display: grid;
-    grid-gap: 2rem;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-}
-.reading {
-    font-size: 1.2rem;
-}
-.cube-content {
-    width: 100%;
-    background-color: white;
-    height: 300px;
-    margin: auto;
-    padding-top: 2%;
-}
-#reset {
-    border: none;
-    color: #fefcfb;
-    background-color: #003366;
-    padding: 10px;
-    text-align: center;
-    display: inline-block;
-    font-size: 14px;
-    width: 150px;
-    border-radius: 4px;
-}
-#resetX,
-#resetY,
-#resetZ {
-    border: none;
-    color: #fefcfb;
-    background-color: #003366;
-    padding-top: 10px;
-    padding-bottom: 10px;
-    text-align: center;
-    display: inline-block;
-    font-size: 14px;
-    width: 20px;
-    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
 }
 
 .header {
@@ -86,94 +36,101 @@ body {
     margin: 10px;
     padding: 10px;
     width: calc(100vw - 40px);
+    height: 25px;
     border-radius: 10px;
+    flex-grow: 0;
 }
+
 .main {
     display: flex;
+    flex-direction: row;
+    gap: 10px;
+    /* background-color: rgb(191, 253, 251); */
+    /* height: 100px; */
+    /* border-radius: 10px; */
+
+    margin: 10px;
+    margin-top: 0;
+    width: calc(100vw - 20px);
+    flex-grow: 1;
 }
 
-.data-sidebar {
-    flex-grow: none;
+.parameters-box {
+    width: 35%;
+    height: calc(100% - 10px);
+    background-color: rgb(191, 253, 251);
+    border-radius: 10px;
+    flex-grow: 0;
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 80px);
-}
-
-.widgets {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-.widgets .map-canvas {
-    background-color: #fefcfb;
-    margin-right: 10px;
-    border-radius: 10px;
-    height: 25rem;
-}
-.widgets .compass-box {
-    flex-grow: none;
-    background-color: #fefcfb;
-    margin: 10px 10px 0 0;
-    border-radius: 10px;
-    /* flex-grow: 1; */
-    width: 15rem;
-}
-.widgets .map-box {
-    flex-grow: 1;
-    background-color: #fefcfb;
-    border-radius: 10px;
-    margin-right: 10px;
-}
-
-.widgets .map-box h2 {
-    padding: 0;
-    margin: 5px 0 0;
-}
-
-.widgets #mapCanvas {
-    height: calc(100% - 3rem);
-    width: calc(100% - 20px);
-    margin: 0 10px 0 10px;
-}
-
-.widgets .compass-box h2 {
-    /* padding-top: 5px; */
-    margin: 5px 0 0 0;
-}
-.widgets .compass-box .compass-canvas {
-    /* padding-top: 5px; */
-    /* background-color: #f7c4aa; */
-    width: 100%;
-    height: calc(100% - 3rem);
-    margin-top: 5px;
-}
-
-.telemetry,
-.gps {
-    width: 17rem;
-    background-color: #fefcfb;
-    border-radius: 10px;
-    margin: 0 10px 0 10px;
-    padding-bottom: 10px;
-}
-.telemetry {
-    flex-grow: none;
-}
-.gps {
-    margin-top: 10px;
-    flex-grow: 1;
-}
-
-.telemetry h2 {
+    gap: 2;
+    justify-content: start;
+    align-items: center;
     padding-top: 10px;
+    margin-bottom: 10px;
 }
-.telemetry div,
-.gps div {
-    text-align: left;
+.telemetry-data {
+    width: 100%;
+}
+.thrusters {
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+    align-items: center;
+}
+
+.telemetry-data .parameters {
+    width: 100%;
     padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
 }
-.telemetry p,
-.gps p {
-    line-height: 0.6rem;
+
+.map-box {
+    flex-grow: 1;
+    height: 100%;
+    background-color: rgb(191, 253, 251);
+    border-radius: 10px;
+}
+.map-box .map {
+    margin: 10px;
+    height: calc(100% - 20px);
+}
+
+.barcontainer {
+    background-color: #181818;
+    position: relative;
+    margin-left: 20px;
+    margin-right: 20px;
+    width: 15px;
+    height: 100px;
+    float: left;
+    box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px;
+}
+
+.bar {
+    background-color: #9bc9c7;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    /* height: 50%; */
+    box-sizing: border-box;
+    animation: grow 1.5s ease-out forwards;
+    transform-origin: bottom;
+    transition: height 1s ease;
+}
+
+.bar.t-1::after {
+    content: attr(data-value);
+    position: absolute;
+    bottom: -20px;
+    left: -5px;
+}
+
+.bar.t-2::after {
+    content: attr(data-value);
+    position: absolute;
+    bottom: -20px;
+    left: -5px;
 }

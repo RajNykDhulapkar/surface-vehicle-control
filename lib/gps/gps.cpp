@@ -225,6 +225,71 @@ void gps::write_processed_module_data_to_prompt(HardwareSerial &refSerial, Hardw
     // }
 }
 
+// return true if lat lon are set
+bool gps::getLatLon(double *lat, double *lon, HardwareSerial &refSerial)
+{
+    while (refSerial.available() > 0)
+    {
+        String readString = refSerial.readStringUntil('\n');
+        readString.trim();
+        if (readString.startsWith("$"))
+        {
+            String messageId = getMessageId(readString);
+            if (messageId == "GPRMC")
+            {
+                String tokens[10];
+                tokenize(getMainMessage(readString), tokens, 10);
+                // Serial.print(" ");
+                // Serial.print(tokens[2]);
+                // Serial.print(" ");
+                if (tokens[2].equals("V"))
+                    return false;
+                *lat = (double)getDecimalCord(tokens[3], tokens[4].charAt(0));
+                // Serial.print((double)getDecimalCord(tokens[3], tokens[4].charAt(0)), 6);
+                *lon = (double)getDecimalCord(tokens[5], tokens[6].charAt(0));
+                return true;
+            }
+        }
+    }
+    return false;
+}
+String gps::getMessageId(String msg)
+{
+    int pos = msg.indexOf(',');
+    return msg.substring(1, pos);
+}
+String gps::getMainMessage(String str)
+{
+    int pos = str.indexOf('*');
+    return str.substring(1, pos);
+}
+
+float gps::getDecimalCord(String data, char side)
+{
+    float dataAsFloat = atof(data.c_str());
+    if (side == char(78) || side == char(69))
+    {
+        return ConvertData(dataAsFloat);
+    }
+    else
+    {
+        return -(ConvertData(dataAsFloat));
+    }
+}
+
+// str must be the main message
+int gps::tokenize(String str, String tokens[], int size_tokens)
+{
+    int count = 0;
+    while (count < size_tokens)
+    {
+        int pos = str.indexOf(',');
+        tokens[count++] = str.substring(0, pos);
+        str.remove(0, pos + 1);
+    }
+    return count;
+}
+
 // Conversion function
 float gps::ConvertData(float RawDegrees)
 {

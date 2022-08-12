@@ -468,3 +468,22 @@ int IMU::whoAmIAK8963()
     // return the register value
     return _buffer[0];
 }
+
+bool IMU::getHeading(double *psi)
+{
+    float magX = getMagX_uT() - 19.03355;
+    float magY = getMagY_uT() - 27.47569;
+    float magZ = getMagZ_uT() - 66.334158;
+
+    magX = 0.89534 * magX - 0.017772 * magY - 0.01735 * magZ;
+    magY = -0.017772 * magX + 0.883792 * magY - 0.022609;
+
+    if ((magX > 0 && magY > 0) || (magX < 0 && magY > 0))
+        if ((360 - (atan2(magY, magX) * 180 / PI)) > 270)
+            *psi = (360 - (atan2(magY, magX) * 180 / PI)) - 270;
+        else
+            *psi = (360 - (atan2(magY, magX) * 180 / PI)) + 90;
+    else
+        *psi = (360 - (atan2(magY, magX) * 180 / PI + 360)) + 90;
+    return false;
+}

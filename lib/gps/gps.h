@@ -32,8 +32,14 @@ namespace gps
 
     void write_processed_module_data_to_prompt(HardwareSerial &refSerial, HardwareSerial &promptSerial);
 
+    bool getLatLon(double *lat, double *lon, HardwareSerial &refSerial);
+    String getMessageId(String msg);
+    String getMainMessage(String str);
+    int tokenize(String str, String tokens[], int size_tokens);
+
     float ConvertData(float RawDegrees);
 
+    float getDecimalCord(String data, char side);
 }
 
 #endif

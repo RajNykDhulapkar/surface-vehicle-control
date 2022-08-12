@@ -21,61 +21,41 @@
 <body>
     <div class="header">Dashboard</div>
     <div class="main">
-        <div class="data-sidebar">
-            <div class="telemetry">
-                <h2 class=".head">Telemetry data</h2>
-                <div>
-                    <p>accelerometer</p>
-                    <div>
-                        <p>x : <span id="accl_x"></span></p>
-                        <p>y : <span id="accl_y"></span></p>
-                        <p>z : <span id="accl_z"></span></p>
-                    </div>
-                </div>
-                <div>
-                    <p>gyroscope</p>
-                    <div>
-                        <p>x : <span id="gyro_x"></span></p>
-                        <p>y : <span id="gyro_y"></span></p>
-                        <p>z : <span id="gyro_z"></span></p>
-                    </div>
-                </div>
-                <div>
-                    <p>magnetometer</p>
-                    <div>
-                        <p>x : <span id="magneto_x"></span></p>
-                        <p>y : <span id="magneto_y"></span></p>
-                        <p>z : <span id="magneto_z"></span></p>
-                    </div>
-                </div>
-                <div>
-
-                    <p>heading : <span id="heading"></span>°</p>
-
+        <div class="parameters-box">
+            <div class="telemetry-data">
+                <h2>Telemetry Data</h2>
+                <div class="parameters">
+                    <p>latitude : <span id="td_latitude"></span></p>
+                    <p>longitude : <span id="td_longitude"></span></p>
+                    <p>psi : <span id="td_psi"></span></p>
+                    <p>psi_d : <span id="td_psi_d"></span></p>
+                    <p>d : <span id="td_d"></span></p>
                 </div>
             </div>
-            <div class="gps">
-                <h2 class=".head">GPS data</h2>
-                <div>
-                    <p>latitude : <span id="latitude"></span></p>
-                    <p>longitude : <span id="longitude"></span></p>
-                    <p>speed : <span id="speed"></span></p>
-                    <p>true course : <span id="true_course"></span></p>
+            <div class="cluster">
+                <div class="compass-box">
+                    <h2>Compass</h2>
+                    <div class="compass" id="compassCanvas"></div>
                 </div>
-
+                <div class="thrusters">
+                    <h2>Thrusters</h2>
+                    <div class="columns">
+                        <div class="barcontainer">
+                            <div class="bar t-1" id="t_1" data-value="800">
+                            </div>
+                        </div>
+                        <div class="barcontainer">
+                            <div class="bar t-2" id="t_2" data-value="500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
+
         </div>
-        <div class="widgets">
-            <div class="map-box">
-                <h2>Map</h2>
-                <div class="map-canvas" id="mapCanvas">
-                </div>
-            </div>
+        <div class="map-box">
 
-            <div class="compass-box">
-                <h2>Compass</h2>
-                <div class="compass-canvas" id="compassCanvas"></div>
-            </div>
+            <div class="map" id="mapCanvas"></div>
         </div>
     </div>
     <script src="/static/script.js"></script>

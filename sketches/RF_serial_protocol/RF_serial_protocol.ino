@@ -1,3 +1,5 @@
+// #include <TinyGPS.h>
+
 /*
 
   Multiple Serial test
@@ -65,19 +67,19 @@ void setup()
 void loop()
 {
 
-    Serial1.print(signMessage(commands[k++]));
-    if (k > 2)
-        k = 0;
-    delay(1000);
+    // Serial1.print(signMessage(commands[k++]));
+    // if (k > 2)
+    //     k = 0;
+    // delay(1000);
     // Serial1.write(msg_modeSelectAutonomous);
     // delay(1000);
 
     // read from port 1, send to port 0:
 
-    if (Serial.available())
+    if (Serial1.available())
     {
 
-        readString = Serial.readStringUntil('\n');
+        readString = Serial1.readStringUntil('\n');
         readString.trim();
         bool isValid = false;
         if (readString.startsWith("$"))
@@ -174,6 +176,9 @@ bool validateMessage(String msg)
 {
     uint16_t checkSum = getCRCCheckSum(msg).toInt();
     String mainMessage = getMainMessage(msg);
+    Serial.print(" , ");
+    Serial.print(checksumCalculator(mainMessage));
+    Serial.print(" , ");
     return checksumCalculator(mainMessage) == checkSum;
 }
 

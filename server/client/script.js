@@ -4,34 +4,57 @@ let a = [
     [-0.01735, -0.022609, 0.971979],
 ];
 
+const t_1 = document.querySelector("#t_1");
+const t_2 = document.querySelector("#t_2");
+
+t_1.style.height = `${t_1.dataset.value / 10}%`;
+t_2.style.height = `${t_2.dataset.value / 10}%`;
+
+const geoJson = {
+    type: "FeatureCollection",
+    features: [
+        {
+            type: "Feature",
+            properties: {},
+            geometry: {
+                type: "LineString",
+                coordinates: [
+                    [73.80256354808807, 15.455660506365126],
+                    [73.80313217639923, 15.456885893332524],
+                ],
+            },
+        },
+    ],
+};
+
 let b = [19.03355, 27.47569, 66.334158];
 let heading = 0;
 
 var socket = io("http://localhost:3000/");
 
-var map = L.map("mapCanvas").setView([15.455956, 73.802159], 15);
+const map = L.map("mapCanvas").setView([15.455956, 73.802159], 15);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "© OpenStreetMap",
 }).addTo(map);
 
-var theMarker = {};
+L.geoJSON(geoJson).addTo(map);
 
+var marker1 = L.marker([15.455660506365126, 73.80256354808807]).addTo(map);
+var marker2 = L.marker([15.456885893332524, 73.80313217639923]).addTo(map);
+//Leaflet Draw Event
 map.on("click", function (e) {
-    lat = e.latlng.lat;
-    lon = e.latlng.lng;
-
-    console.log("You clicked the map at LAT: " + lat + " and LONG: " + lon);
-    //Clear existing marker,
-
-    if (theMarker != undefined) {
-        map.removeLayer(theMarker);
-    }
-
-    //Add a marker to show where you clicked.
-    theMarker = L.marker([lat, lon]).addTo(map);
+    var marker = L.marker(e.latlng).addTo(map);
+    var markerpopup = L.popup({});
+    //Set popup lat lng where clicked
+    markerpopup.setLatLng(e.latlng);
+    //console.log(e.layer._latlng);
+    //Set popup content
+    markerpopup.setContent("Popup");
+    //Bind marker popup
+    marker.bindPopup(markerpopup);
+    //Add marker to geojson layer
+    drawnItems.addLayer(marker);
 });
-
-var marker = L.marker([15.455956, 73.802159]).addTo(map);
 
 function parentWidth(elem) {
     return elem.parentElement.clientWidth;
@@ -88,7 +111,7 @@ socket.on("message", function (msg) {
 const compassCanvas = document.getElementById("compassCanvas");
 
 function setup() {
-    const canvas = createCanvas(200, 200);
+    const canvas = createCanvas(150, 150);
     canvas.parent("compassCanvas");
     // compass = new Compass();
     // compass.init(compassReady);
@@ -96,11 +119,13 @@ function setup() {
 }
 
 function draw() {
-    background(254, 252, 251);
-    translate(100, 100);
+    background(191, 253, 251);
+    translate(75, 75);
     rotate(heading);
     fill(0);
     rect(-10, -50, 20, 100);
+    fill(196, 98, 16);
+    rect(-10, -50, 20, 20);
 }
 
 // m1 -

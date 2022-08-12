@@ -11,3 +11,6 @@ references
 
 #data
 **/**/venv
+
+gui/dist
+gui/build
