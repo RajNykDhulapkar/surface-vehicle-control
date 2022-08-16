@@ -15,9 +15,10 @@ int imu_status = 0;
 
 /*
  * mode
- * 0 - auto
- * 1 - guided
- * 2 - manual
+ * -1 - inactive
+ *  0 - auto
+ *  1 - guided
+ *  2 - manual
  */
 int mode = 0;
 
@@ -44,10 +45,15 @@ void calculateDiff();
 void calculatePsi_d();
 void calculate_d();
 void calculate_psi();
-void sendLatLonToRecv(double lat, double lon);
+void sendLatLonToRecv();
 void sendPOSToRecv();
 void sendCtrlToRecv();
 void sendStatus();
+void handleCMDMessage(String);
+void double_to_byteArray(double, uint8_t *);
+void int_to_byteArray(int, uint8_t *);
+void append_double(uint8_t *, double, uint8_t &);
+void append_int(uint8_t *, int, uint8_t &);
 
 volatile double psi = 0;
 volatile double yaw_rate = 0;
@@ -63,6 +69,7 @@ int recvInterval = 400;
 int sendInterval = 1500;
 
 boolean toggle4 = LOW;
+String readRecvString;
 
 void setup()
 {
@@ -132,44 +139,41 @@ void loop()
   // target_lon = 73.802735;
   // LLtoUTM(target_lat, target_lon, &utm_target_easting, &utm_target_northing);
 
-  // imu.readSensor();
-  // imu.getHeading(&psi);
-  // Serial.print(psi, 6);
-  // Serial.print(" ");
-  // Serial.print(lat, 6);
-  // Serial.print(" ");
-  // Serial.print(lon, 6);
-  // Serial.print(" ");
-  // Serial.print(utm_easting);
-  // Serial.print(" ");
-  // Serial.print(utm_northing);
-  // Serial.print(" ");
-  // Serial.print(target_lat);
-  // Serial.print(" ");
-  // Serial.print(target_lon);
-  // Serial.print(" ");
-  // Serial.print(utm_target_easting);
-  // Serial.print(" ");
-  // Serial.print(utm_target_northing);
-  // double psi_d = calculatePsi_d();
-  // Serial.print(" ");
-  // Serial.print(psi_d, 6);
-  // Serial.print(" ");
-  // diff_m = calculateDiff(psi_d, psi, imu.getGyroZ_rads());
-  // // diff_m = constrain(diff_m, 200, -200);
-  // Serial.print(diff_m, 6);
-  // Serial.print(" ");
-  // t_1 = (comm_m - diff_m) / 2;
-  // Serial.print(t_1, 2);
-  // Serial.print(" ");
-  // t_2 = (comm_m + diff_m) / 2;
-  // Serial.print(t_2, 2);
-  // float d = sqrtf(sq(utm_target_easting - utm_easting) + sq(utm_target_northing - utm_northing));
-  // Serial.print(" ");
-  // Serial.println(d, 2);
-  // delay(1000);
+  if ((int)(currentTime - recvPreviousTime) >= recvInterval)
+  {
+    // sendLatLonToRecv();
+    if (Serial3.available() > 0)
+    {
+      readRecvString = Serial3.readStringUntil('\n');
+      readRecvString.trim();
+      bool isValid = false;
+      if (readRecvString.startsWith("$"))
+      {
+        isValid = validateMessage(readRecvString);
+        Serial.print("msg : ");
+        Serial.println(readRecvString);
+        String messageId;
+        String mainMessage;
+        Serial.println(signMessage("$cmd,0,0,0"));
+        if (isValid)
+        {
+          Serial.print("msg [A] : ");
+          Serial.println(readRecvString);
+          messageId = getMessageId(readRecvString);
+          mainMessage = getMainMessage(readRecvString);
+          Serial.println(messageId);
+          Serial.println(mainMessage);
+          if (messageId.equals("cmd"))
+          {
+            handleCMDMessage(mainMessage);
+          }
+        }
+      }
+    }
+    recvPreviousTime = currentTime;
+  }
 
-  if (currentTime - controlPreviousTime >= controlInterval)
+  if ((int)(currentTime - controlPreviousTime) >= controlInterval)
   {
     imu.readSensor();
     calculate_psi();
@@ -189,7 +193,7 @@ void loop()
     guidancePreviousTime = currentTime;
   }
 
-  if (currentTime - sendPreviousTime >= sendInterval)
+  if ((int)(currentTime - sendPreviousTime) >= sendInterval)
   {
     // sendLatLonToRecv();
     sendStatus();
@@ -218,7 +222,7 @@ void calculatePsi_d()
     psi_d = (atan2(d_y, d_x) * 180 / PI + 360);
 }
 
-void sendLatLonToRecv(double lat, double lon)
+void sendLatLonToRecv()
 {
   String sendString = "$gps,";
   sendString.concat(String(lat, 6));
@@ -252,22 +256,84 @@ void sendCtrlToRecv()
 
 void sendStatus()
 {
-  String sendString = "$status,";
-  sendString.concat(String(lat, 6));
-  sendString.concat(",");
-  sendString.concat(String(lon, 6));
-  sendString.concat(",");
-  sendString.concat(String(psi_d, 6));
-  sendString.concat(",");
-  sendString.concat(String(dist, 6));
-  sendString.concat(",");
-  sendString.concat(String(psi, 6));
-  sendString.concat(",");
-  sendString.concat(t_1);
-  sendString.concat(",");
-  sendString.concat(t_2);
-  Serial.print(signMessage(sendString)); // DEBUG
-  Serial3.print(signMessage(sendString));
+  // sendLatLonToRecv();
+  // delay(100);
+  // sendPOSToRecv();
+  // String sendString = "$status";
+  uint8_t sendString[29];
+  uint8_t i = 0;
+  sendString[i++] = 0x73; // 's' status message , message id
+  append_double(sendString, lat, i);
+  append_double(sendString, lon, i);
+  append_double(sendString, psi_d, i);
+  append_double(sendString, dist, i);
+  append_double(sendString, psi, i);
+  append_int(sendString, t_1, i);
+  append_int(sendString, t_2, i);
+  uint16_t crc = crcChecksumCalculator(sendString, i);
+  uint8_t arr[2];
+  *((double *)arr) = crc;
+  sendString[i++] = arr[0];
+  sendString[i++] = arr[1];
+  sendString[i++] = 0x0D;
+  sendString[i++] = 0x0A;
+  // sendString[i++] = 0x00;
+  for (int j = 0; j < 29; j++)
+  {
+    Serial.print("'");
+    Serial.print(sendString[j], HEX);
+    Serial.print("', ");
+  }
+  Serial.print("\n");
+  // Serial3.print((char *)sendString);
+  Serial3.write(sendString, 29);
+
+  // sendString.concat(String(lat, 6));
+  // sendString.concat(",");
+  // sendString.concat(String(lon, 6));
+  // sendString.concat(",");
+  // sendString.concat(String(psi_d, 6));
+  // sendString.concat(",");
+  // sendString.concat(String(dist, 6));
+  // sendString.concat(",");
+  // sendString.concat(String(psi, 6));
+  // sendString.concat(",");
+  // sendString.concat(t_1);
+  // sendString.concat(",");
+  // sendString.concat(t_2);
+
+  // Serial.print(signMessage(sendString)); // DEBUG
+  // Serial3.print(signMessage(sendString));
+  // Serial3.print(signMessage("HelloHelloHello"));
+}
+
+void append_double(uint8_t *buff, double num, uint8_t &i)
+{
+  uint8_t temp[4];
+  double_to_byteArray(num, temp);
+  for (int k = 0; k < 4; k++)
+  {
+    buff[i++] = temp[k];
+  }
+}
+
+void append_int(uint8_t *buff, int num, uint8_t &i)
+{
+  uint8_t temp[2];
+  int_to_byteArray(num, temp);
+  for (int k = 0; k < 2; k++)
+  {
+    buff[i++] = temp[k];
+  }
+}
+void int_to_byteArray(int num, uint8_t *arr)
+{
+  *((int *)arr) = num;
+}
+
+void double_to_byteArray(double num, uint8_t *arr)
+{
+  *((double *)arr) = num;
 }
 
 void calculate_psi()
@@ -295,4 +361,20 @@ void calculate_psi()
       psi = (360 - (atan2(magY, magX) * 180 / PI)) + 90;
   else
     psi = (360 - (atan2(magY, magX) * 180 / PI + 360)) + 90;
+}
+
+// handling recv message
+void handleCMDMessage(String mainMessage)
+{
+  String tokens[3];
+  gps::tokenize(mainMessage, tokens, 3);
+  if (tokens[2].equals("0"))
+  { // mode select
+    Serial.println(mode);
+    if (tokens[3].toInt() >= -1 && tokens[3].toInt() <= 2) // mode select range
+    {
+      mode = tokens[3].toInt();
+    }
+    Serial.println(mode);
+  }
 }

@@ -31,6 +31,21 @@ uint16_t crcChecksumCalculator(String str)
     }
     return (sum2 << 8) | sum1;
 }
+
+uint16_t crcChecksumCalculator(uint8_t *str, uint8_t n)
+{
+    uint16_t curr_crc = 0x0101;
+    uint8_t sum1 = (uint8_t)curr_crc;
+    uint8_t sum2 = (uint8_t)(curr_crc >> 8);
+    uint8_t index;
+    for (index = 0; index < n; index = index + 1)
+    {
+        sum1 = (sum1 + str[index]) % 255;
+        sum2 = (sum2 + sum1) % 255;
+    }
+    return (sum2 << 8) | sum1;
+}
+
 String getMainMessage(String str)
 {
     int pos = str.indexOf('*');
@@ -45,8 +60,8 @@ bool validateMessage(String msg)
 {
     uint16_t checkSum = getCRCCheckSum(msg).toInt();
     String mainMessage = getMainMessage(msg);
-    Serial.print(" , ");
-    Serial.print(crcChecksumCalculator(mainMessage));
-    Serial.print(" , ");
+    // Serial.print(" , ");
+    // Serial.print(crcChecksumCalculator(mainMessage));
+    // Serial.print(" , ");
     return crcChecksumCalculator(mainMessage) == checkSum;
 }

@@ -1,17 +1,17 @@
-#include <Servo.h>
+
 
 void setup()
 {
-    Serial1.begin(9600);
+    Serial3.begin(9600);
     Serial.begin(9600);
     Serial.println("start");
 }
 void loop()
 {
-    while (Serial1.available() > 0)
+    while (Serial.available() > 0)
     {
-        char c = Serial1.read();
+        char c = Serial.read();
         // Serial1.write(c);
-        Serial.write(c);
+        Serial3.write(c);
     }
 }

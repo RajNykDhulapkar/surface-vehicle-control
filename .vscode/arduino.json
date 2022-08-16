@@ -1,5 +1,5 @@
 {
-    "sketch": "sketches\\reset\\reset.ino",
+    "sketch": "sketches\\float_to_byte\\float_to_byte.ino",
     "configuration": "cpu=atmega2560",
     "board": "arduino:avr:mega",
     "port": "COM7"

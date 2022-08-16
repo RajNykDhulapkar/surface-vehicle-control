@@ -176,9 +176,9 @@ bool validateMessage(String msg)
 {
     uint16_t checkSum = getCRCCheckSum(msg).toInt();
     String mainMessage = getMainMessage(msg);
-    Serial.print(" , ");
-    Serial.print(checksumCalculator(mainMessage));
-    Serial.print(" , ");
+    // Serial.print(" , ");
+    // Serial.print(checksumCalculator(mainMessage));
+    // Serial.print(" , ");
     return checksumCalculator(mainMessage) == checkSum;
 }
 
