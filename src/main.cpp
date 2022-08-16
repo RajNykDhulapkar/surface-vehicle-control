@@ -271,8 +271,9 @@ void sendStatus()
   append_int(sendString, t_1, i);
   append_int(sendString, t_2, i);
   uint16_t crc = crcChecksumCalculator(sendString, i);
+  Serial.println(crc);
   uint8_t arr[2];
-  *((double *)arr) = crc;
+  *((uint16_t *)arr) = crc;
   sendString[i++] = arr[0];
   sendString[i++] = arr[1];
   sendString[i++] = 0x0D;

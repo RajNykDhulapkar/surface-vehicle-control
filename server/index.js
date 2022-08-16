@@ -11,7 +11,7 @@ const port = new SerialPort({
     baudRate: parseInt(process.env.BAUD_RATE, 10) || 9600,
 });
 // const parser = port.pipe(new ReadlineParser({ delimiter: "\r\n" }));
-const parser = port.pipe(new ByteLengthParser({ length: 29 }));
+const parser = port.pipe(new ByteLengthParser({ length: 29, delimiter: "\n" }));
 
 // Read the port data
 // parser.on("data", (data) => {
@@ -47,7 +47,7 @@ io.on("connection", (socket) => {
 });
 
 function processData(data) {
-    console.log([...data]);
+    // console.log([...data]);
 
     if (String.fromCharCode(data[0]) == "s") {
         return handleStatusMessage([...data]);
@@ -61,22 +61,23 @@ function handleStatusMessage(data) {
         for (let j = i; j < i + 4; j++) {
             intArray[j - i] = data[j];
         }
-        console.log(intArray);
+        // console.log(intArray);
         value = Buffer.from(intArray.reverse()).readFloatBE(0);
-        clientMessage += String(value) + ",";
-        console.log(value);
+        clientMessage += String(Math.round(value * 1000000) / 1000000) + ",";
+        // console.log(value);
     }
     for (let i = 21; i < 27; i += 2) {
         var intArray = [];
         for (let j = i; j < i + 2; j++) {
             intArray[j - i] = data[j];
         }
-        console.log(intArray);
+        // console.log(intArray);
         value = Buffer.from(intArray.reverse()).readInt16BE(0);
-        if (i < 25) clientMessage += String(value) + ",";
+        if (i < 23) clientMessage += String(value) + ",";
+        else if (i < 25) clientMessage += String(value);
         else clientMessage += "*" + String(value);
 
-        console.log(value);
+        // console.log(value);
     }
     console.log(clientMessage);
     return clientMessage;
