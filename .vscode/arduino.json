@@ -1,5 +1,5 @@
 {
-    "sketch": "sketches\\float_to_byte\\float_to_byte.ino",
+    "sketch": "sketches\\gps\\gps.ino",
     "configuration": "cpu=atmega2560",
     "board": "arduino:avr:mega",
     "port": "COM7"

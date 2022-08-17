@@ -30,6 +30,8 @@
                     <p>psi : <span id="td_psi"></span></p>
                     <p>psi_d : <span id="td_psi_d"></span></p>
                     <p>d : <span id="td_d"></span></p>
+                    <p>mode : <span id="td_mode"></span></p>
+                    <button id="refresh">Refresh</button>
                 </div>
             </div>
             <div class="cluster">
@@ -50,6 +52,21 @@
                         </div>
                     </div>
                 </div>
+            </div>
+            <div class="cmd_buttons">
+                <div class="buttons">
+                    <button id="start_cmd">Start</button>
+                    <button id="abort_cmd">Abort</button>
+                    <button id="mission_cmd">Reset Target</button>
+                </div>
+                <div class="cmd_ack">
+                    message
+                </div>
+                <div class="target_lanlon">
+                    <p>tar lat : <span id="tar_latitude">15.457496</span></p>
+                    <p>tar lon : <span id="tar_longitude">73.803382</span></p>
+                </div>
+
             </div>
 
         </div>

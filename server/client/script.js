@@ -3,10 +3,21 @@ let a = [
     [-0.017772, 0.883792, -0.022609],
     [-0.01735, -0.022609, 0.971979],
 ];
+let b = [19.03355, 27.47569, 66.334158];
+
+const startBtn = document.getElementById("start_cmd");
+const abortBtn = document.getElementById("abort_cmd");
+const missionCmdButton = document.getElementById("mission_cmd");
+
+startBtn.addEventListener("click", (e) => {
+    socket.emit("cmd_message", "$cmd,0,0,0,0");
+});
+abortBtn.addEventListener("click", (e) => {
+    socket.emit("cmd_message", "$cmd,0,0,0,2");
+});
 
 const t_1 = document.querySelector("#t_1");
 const t_2 = document.querySelector("#t_2");
-
 t_1.style.height = `${t_1.dataset.value / 10}%`;
 t_2.style.height = `${t_2.dataset.value / 10}%`;
 
@@ -27,20 +38,36 @@ const geoJson = {
     ],
 };
 
-let b = [19.03355, 27.47569, 66.334158];
 let heading = 0;
 
 var socket = io("http://localhost:3000/");
 
 const map = L.map("mapCanvas").setView([15.456031, 73.802101], 17);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "© OpenStreetMap",
-}).addTo(map);
+const osm = L.tileLayer("https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png", {
+    maxZoom: 20,
+    attribution:
+        '&copy; OpenStreetMap France | &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+});
+osm.addTo(map);
 
-L.geoJSON(geoJson).addTo(map);
+// L.geoJSON(geoJson).addTo(map);
 
-var marker1 = L.marker([15.457496, 73.803382]).addTo(map);
-var marker2 = L.marker([15.456031, 73.802101]).addTo(map);
+var targetLocIcon = L.icon({
+    iconUrl: "/images/currLoc.png",
+    iconSize: [48, 48],
+    iconAnchor: [24, 48],
+    popupAnchor: [-3, -76],
+});
+
+var targetIcon = L.icon({
+    iconUrl: "/images/target.png",
+    iconSize: [50, 50],
+    iconAnchor: [25, 25],
+    popupAnchor: [-3, -76],
+});
+
+var targetMarker = L.marker([15.457496, 73.803382], { icon: targetLocIcon }).addTo(map);
+var currentMarker = L.marker([15.456031, 73.802101]).addTo(map);
 //Leaflet Draw Event
 // map.on("click", function (e) {
 //     var marker = L.marker(e.latlng).addTo(map);
@@ -71,16 +98,43 @@ socket.on("message", function (msg) {
         const lon = Number(cords[2]);
         document.getElementById("td_latitude").innerHTML = lat;
         document.getElementById("td_longitude").innerHTML = lon;
-        marker2.setLatLng([lat, lon]);
+        currentMarker.setLatLng([lat, lon]);
         document.getElementById("td_psi_d").innerHTML = cords[3];
         document.getElementById("td_d").innerHTML = cords[4];
         heading = Number(cords[5]);
         document.getElementById("td_psi").innerHTML = heading;
-        t_1.dataset.value = Number(cords[6]);
-        t_2.dataset.value = Number(cords[7].split("*")[0]);
+        document.getElementById("td_mode").innerHTML = cords[6];
+        t_1.dataset.value = Number(cords[7]);
+        t_2.dataset.value = Number(cords[8].split("*")[0]);
         t_1.style.height = `${t_1.dataset.value / 10}%`;
         t_2.style.height = `${t_2.dataset.value / 10}%`;
     }
+});
+
+missionCmdButton.addEventListener("click", (e) => {
+    if (e.target.innerHTML == "Reset Target") {
+        targetMarker.dragging.enable();
+    } else {
+        targetMarker.dragging.disable();
+    }
+    if (e.target.innerHTML == "Upload") {
+        socket.emit(
+            "mis_message",
+            "$mis," + targetMarker.getLatLng().lat + "," + targetMarker.getLatLng().lng
+        );
+    }
+    e.target.innerHTML = e.target.innerHTML === "Upload" ? "Reset Target" : "Upload";
+});
+
+document.getElementById("refresh").addEventListener("click", () => {
+    socket.emit("refresh");
+});
+
+targetMarker.on("drag", function (e) {
+    document.getElementById("tar_latitude").innerHTML =
+        Math.round(targetMarker.getLatLng().lat * 1000000) / 1000000;
+    document.getElementById("tar_longitude").innerHTML =
+        Math.round(targetMarker.getLatLng().lng * 1000000) / 1000000;
 });
 
 const compassCanvas = document.getElementById("compassCanvas");

@@ -68,15 +68,10 @@ body {
     align-items: center;
     padding-top: 10px;
     margin-bottom: 10px;
+    overflow: hidden;
 }
 .telemetry-data {
     width: 100%;
-}
-.thrusters {
-    display: flex;
-    flex-direction: column;
-    justify-content: start;
-    align-items: center;
 }
 
 .telemetry-data .parameters {
@@ -98,9 +93,24 @@ body {
     height: calc(100% - 20px);
 }
 
+.cluster {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+.thrusters {
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+    align-items: center;
+}
+.thrusters h2 {
+    margin-bottom: 1.3rem;
+}
 .barcontainer {
     background-color: #181818;
     position: relative;
+    /* padding-top: 2rem; */
     margin-left: 20px;
     margin-right: 20px;
     width: 15px;
@@ -133,4 +143,8 @@ body {
     position: absolute;
     bottom: -20px;
     left: -5px;
+}
+
+.cmd_buttons {
+    margin-top: 2rem;
 }

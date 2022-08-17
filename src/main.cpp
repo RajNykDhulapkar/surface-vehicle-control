@@ -6,6 +6,7 @@
 #include <Server.h>
 #include <crc.h>
 #include "MPU9250.h"
+#include <helpers.h>
 
 volatile byte count;
 byte reload = 0x9C;
@@ -15,12 +16,11 @@ int imu_status = 0;
 
 /*
  * mode
- * -1 - inactive
  *  0 - auto
  *  1 - guided
- *  2 - manual
+ *  2 - abort
  */
-int mode = 0;
+uint8_t mode = 2;
 
 double lat = 15.455954; // 15.456031
 double lon = 73.802089; // 73.802099
@@ -37,7 +37,7 @@ volatile double psi_d;
 
 // control parameters
 double k_p = 180 * PI / 180, k_d = 0.00;
-double comm_m = 500 * 2;
+double comm_m = 0;
 volatile double diff_m = 0;
 
 int t_1 = (comm_m + diff_m) / 2, t_2 = (comm_m - diff_m) / 2;
@@ -49,7 +49,8 @@ void sendLatLonToRecv();
 void sendPOSToRecv();
 void sendCtrlToRecv();
 void sendStatus();
-void handleCMDMessage(String);
+void handleCMDMessage(uint8_t *message, int startIndex, int endIndex);
+void handleMISMessage(uint8_t *message, int startIndex, int endIndex);
 void double_to_byteArray(double, uint8_t *);
 void int_to_byteArray(int, uint8_t *);
 void append_double(uint8_t *, double, uint8_t &);
@@ -65,7 +66,7 @@ unsigned long recvPreviousTime = 0;
 unsigned long sendPreviousTime = 0;
 int controlInterval = 500;
 int guidanceInterval = 900;
-int recvInterval = 400;
+int recvInterval = 300;
 int sendInterval = 1500;
 
 boolean toggle4 = LOW;
@@ -102,74 +103,34 @@ void setup()
 void loop()
 {
   // gps::write_raw_module_data_to_prompt(Serial1, Serial);
-  // gps::getLatLon(&lat, &lon, Serial1);
-  bool is_valid_cord = true;
-  if (is_valid_cord)
+  bool is_valid_cord = gps::getLatLon(&lat, &lon, Serial1);
+  if (true)
   {
-    // char buffer[50];
-    // char temp_lat[10];
-    // char temp_lon[10];
     lat = 15.456031;
     lon = 73.802099;
-    // sendLatLonToRecv(lat, lon);
-    // dtostrf(lon, 4, 5, temp_lon);
-    // dtostrf(lat, 4, 5, temp_lat);
-
-    // String sendString = "$gps,";
-    // sendString += String(lat, 6);
-    // sendString += ",";
-    // sendString += String(lon, 6);
-    // String sendString = "$gps,0.00,0.00";
-    // sprintf(buffer, "$gps,%s,%s", String(lat, 6).c_str(), String(lon, 6).c_str());
-    // Serial.println(sendString); // DEBUG
-    // Serial3.println(sendString);
-    // delay(1000);
-    // LLtoUTM(lat, lon, &utm_easting, &utm_northing);
-    // LLtoUTM(target_lat, target_lon, &utm_target_easting, &utm_target_northing);
   }
   currentTime = millis();
-  // gps::write_raw_module_data_to_prompt(Serial1, Serial);
-  // Serial.print(gps::getLatLon(&lat, &lon, Serial1));
-  // Serial.print(" ");
-  // lat = 15.455904;
-  // lon = 73.802584;
-
-  // LLtoUTM(lat, lon, &utm_easting, &utm_northing);
-  // target_lat = 15.456914;
-  // target_lon = 73.802735;
-  // LLtoUTM(target_lat, target_lon, &utm_target_easting, &utm_target_northing);
 
   if ((int)(currentTime - recvPreviousTime) >= recvInterval)
   {
-    // sendLatLonToRecv();
-    if (Serial3.available() > 0)
+    if (Serial3.available())
     {
-      readRecvString = Serial3.readStringUntil('\n');
-      readRecvString.trim();
-      bool isValid = false;
-      if (readRecvString.startsWith("$"))
+
+      uint8_t buf[15];
+      Serial3.readBytesUntil('\n', buf, sizeof(buf));
+      Serial.print("    recv : ");
+      printBuffer(buf, (int)sizeof(buf));
+      int startIndex = findIndexInBuffer(buf, (uint8_t)'$', (int)sizeof(buf)) + 1;
+      int endIndex = findIndexInBuffer(buf, (uint8_t)'\r', (int)sizeof(buf));
+      if (startIndex != -1 && endIndex != -1)
       {
-        isValid = validateMessage(readRecvString);
-        Serial.print("msg : ");
-        Serial.println(readRecvString);
-        String messageId;
-        String mainMessage;
-        Serial.println(signMessage("$cmd,0,0,0"));
-        if (isValid)
-        {
-          Serial.print("msg [A] : ");
-          Serial.println(readRecvString);
-          messageId = getMessageId(readRecvString);
-          mainMessage = getMainMessage(readRecvString);
-          Serial.println(messageId);
-          Serial.println(mainMessage);
-          if (messageId.equals("cmd"))
-          {
-            handleCMDMessage(mainMessage);
-          }
-        }
+        if (buf[startIndex] == (uint8_t)'c')
+          handleCMDMessage(buf, startIndex, endIndex);
+        else if (buf[startIndex] == (uint8_t)'m')
+          handleMISMessage(buf, startIndex, endIndex);
       }
     }
+
     recvPreviousTime = currentTime;
   }
 
@@ -178,17 +139,26 @@ void loop()
     imu.readSensor();
     calculate_psi();
     calculateDiff();
-    t_1 = (comm_m - diff_m) / 2;
-    t_2 = (comm_m + diff_m) / 2;
-    // sendCtrlToRecv();
+
+    if ((mode == 0))
+    {
+      t_1 = (comm_m - diff_m) / 2;
+      t_2 = (comm_m + diff_m) / 2;
+    }
+
     controlPreviousTime = currentTime;
   }
 
-  if ((int)(currentTime - guidancePreviousTime) >= guidanceInterval)
+  if (((int)(currentTime - guidancePreviousTime) >= guidanceInterval))
   {
-    LLtoUTM(lat, lon, &utm_easting, &utm_northing);
-    calculatePsi_d();
-    calculate_d();
+    if (mode == 0)
+    {
+      LLtoUTM(lat, lon, &utm_easting, &utm_northing);
+      calculatePsi_d();
+      calculate_d();
+      Serial.print("updated pdi_d");
+    }
+
     // sendPOSToRecv();
     guidancePreviousTime = currentTime;
   }
@@ -222,90 +192,29 @@ void calculatePsi_d()
     psi_d = (atan2(d_y, d_x) * 180 / PI + 360);
 }
 
-void sendLatLonToRecv()
-{
-  String sendString = "$gps,";
-  sendString.concat(String(lat, 6));
-  sendString.concat(",");
-  sendString.concat(String(lon, 6));
-  Serial.print(signMessage(sendString)); // DEBUG
-  Serial3.print(signMessage(sendString));
-}
-
-void sendPOSToRecv()
-{
-  String sendString = "$pos,";
-  sendString.concat(String(psi_d, 6));
-  sendString.concat(",");
-  sendString.concat(String(dist, 6));
-  Serial.print(signMessage(sendString)); // DEBUG
-  Serial3.print(signMessage(sendString));
-}
-
-void sendCtrlToRecv()
-{
-  String sendString = "$ctrl,";
-  sendString.concat(String(psi, 6));
-  sendString.concat(",");
-  sendString.concat(t_1);
-  sendString.concat(",");
-  sendString.concat(t_2);
-  Serial.print(signMessage(sendString)); // DEBUG
-  Serial3.print(signMessage(sendString));
-}
-
 void sendStatus()
 {
-  // sendLatLonToRecv();
-  // delay(100);
-  // sendPOSToRecv();
-  // String sendString = "$status";
-  uint8_t sendString[29];
+  uint8_t sendString[30];
   uint8_t i = 0;
-  sendString[i++] = 0x73; // 's' status message , message id
-  append_double(sendString, lat, i);
-  append_double(sendString, lon, i);
-  append_double(sendString, psi_d, i);
-  append_double(sendString, dist, i);
-  append_double(sendString, psi, i);
-  append_int(sendString, t_1, i);
-  append_int(sendString, t_2, i);
+  sendString[i++] = 0x73;              // 's' status message , message id
+  append_double(sendString, lat, i);   //  1- 4
+  append_double(sendString, lon, i);   // 5 - 8
+  append_double(sendString, psi_d, i); // 9 - 12
+  append_double(sendString, dist, i);  // 13 - 16
+  append_double(sendString, psi, i);   // 17 - 20
+  sendString[i++] = mode;              // 21
+  append_int(sendString, t_1, i);      // 22 - 23
+  append_int(sendString, t_2, i);      // 24 -25
   uint16_t crc = crcChecksumCalculator(sendString, i);
-  Serial.println(crc);
   uint8_t arr[2];
   *((uint16_t *)arr) = crc;
-  sendString[i++] = arr[0];
-  sendString[i++] = arr[1];
-  sendString[i++] = 0x0D;
-  sendString[i++] = 0x0A;
-  // sendString[i++] = 0x00;
-  for (int j = 0; j < 29; j++)
-  {
-    Serial.print("'");
-    Serial.print(sendString[j], HEX);
-    Serial.print("', ");
-  }
-  Serial.print("\n");
-  // Serial3.print((char *)sendString);
-  Serial3.write(sendString, 29);
-
-  // sendString.concat(String(lat, 6));
-  // sendString.concat(",");
-  // sendString.concat(String(lon, 6));
-  // sendString.concat(",");
-  // sendString.concat(String(psi_d, 6));
-  // sendString.concat(",");
-  // sendString.concat(String(dist, 6));
-  // sendString.concat(",");
-  // sendString.concat(String(psi, 6));
-  // sendString.concat(",");
-  // sendString.concat(t_1);
-  // sendString.concat(",");
-  // sendString.concat(t_2);
-
-  // Serial.print(signMessage(sendString)); // DEBUG
-  // Serial3.print(signMessage(sendString));
-  // Serial3.print(signMessage("HelloHelloHello"));
+  sendString[i++] = arr[0]; // 26
+  sendString[i++] = arr[1]; // 27
+  sendString[i++] = 0x0D;   // 28
+  sendString[i++] = 0x0A;   // 29
+  Serial.print("send : ");
+  printBuffer(sendString, (int)sizeof(sendString));
+  Serial3.write(sendString, (int)sizeof(sendString));
 }
 
 void append_double(uint8_t *buff, double num, uint8_t &i)
@@ -365,17 +274,61 @@ void calculate_psi()
 }
 
 // handling recv message
-void handleCMDMessage(String mainMessage)
+void handleCMDMessage(uint8_t *message, int startIndex, int endIndex)
 {
-  String tokens[3];
-  gps::tokenize(mainMessage, tokens, 3);
-  if (tokens[2].equals("0"))
-  { // mode select
+  // message: 0x63 | b1 | b2 | b3 | b4 | cs_b5 cs_b6
+  Serial.println("        Handling command message");
+  if (message[startIndex + 3] == 0)
+  {
+    mode = message[startIndex + 4];
+    Serial.print("        Mode select operation : set mode to ");
     Serial.println(mode);
-    if (tokens[3].toInt() >= -1 && tokens[3].toInt() <= 2) // mode select range
+    if (mode == 0)
     {
-      mode = tokens[3].toInt();
+      diff_m = 0;
+      comm_m = 500 * 2;
+      t_1 = (comm_m + diff_m) / 2;
+      t_2 = (comm_m - diff_m) / 2;
     }
-    Serial.println(mode);
+    else if (mode == 2)
+    {
+      diff_m = 0;
+      comm_m = 0;
+      t_1 = 0;
+      t_2 = 0;
+    }
   }
+}
+
+void handleMISMessage(uint8_t *message, int startIndex, int endIndex)
+{
+  // message: 0x6d |  b1  b2  b3  b4 | b5 b6 b7 b8 | cs_b5 cs_b6
+  Serial.println("        Handling mission message");
+  uint8_t temp[4];
+  int j = 3;
+  startIndex++;
+  for (int i = startIndex; i < startIndex + 4; i++)
+  {
+    temp[j--] = message[i];
+  }
+  double lat = *((double *)(temp));
+  Serial.print("        ");
+  printBuffer(temp, (int)sizeof(temp));
+  Serial.print("        ");
+  Serial.println(lat, 6);
+  target_lat = lat;
+
+  j = 3;
+  for (int i = startIndex + 4; i < startIndex + 8; i++)
+  {
+    temp[j--] = message[i];
+  }
+  double lon = *((double *)(temp));
+  Serial.print("        ");
+  printBuffer(temp, (int)sizeof(temp));
+  Serial.print("        ");
+  Serial.println(lon, 6);
+  target_lon = lon;
+
+  LLtoUTM(target_lat, target_lon, &utm_target_easting, &utm_target_northing);
 }
